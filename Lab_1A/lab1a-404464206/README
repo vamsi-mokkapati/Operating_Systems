@@ -1,0 +1,46 @@
+Vamsi Mokkapati
+404-464-206
+CS 111, Project 1A
+TA: Zhaoxing Bu
+
+Description of included files:
+
+lab1a.c:
+
+This is my code to make both a character-at-a-time, full duplex I/O, and a
+mechanism to pass input and output between a terminal and a shell. Without
+the --shell option, it can put the console into non-canonical mode, and write
+any received characters back to the console, one at a time. When run without
+any options, it will also successfully map any carriage returns <cr> or newlines
+<lf> received into <cr><lf>. I tested to make sure the code did this correctly
+by running the exectuble and redirecting it to a file: "./lab1a > file.txt".
+After putting contents into the file, I used "od -ta file.txt" to check that
+every line of text was followed by "cr nl".
+
+With the --shell option, my code can use fork() to make a new process and
+exec a shell whose standard output are piped to the terminal. After simply
+calling "./lab1a --shell", I can use commands like "ls", "pwd", "cd ..", and other
+bash commands to test the shell functionality. Since I used a nested while loop
+to check if my set buffer size was being exceeded and call the read system call
+accordingly, I think my program will perform as expected, and there are no
+limitations of my program I know of. In the shell mode, I also used functions
+like waitpid, WIFEXITED, and WIFSIGNALED to report the shell's exit status on
+exit.
+
+Two late days were used to complete the lab1a.c file, since I started late (Monday),
+and had trouble getting my read_and_write function to work with the --shell option.
+I was consistently getting no characters to be written to the screen when using
+the --shell option, and it took me a while to realize that I had to write to both
+the terminal and the shell when my write file descriptor had a value that was not 1.
+
+Makefile
+
+The Makefile supports the "make clean" argument to clean all files in the folder
+except lab1a.c, Makefile, and README, and the "make dist" argument to create the
+lab1a-404464206.tar.gz tarball. I tested this file by running those commands
+respectively, and making sure they create or delete the files they're supposed to.
+
+README
+
+This README describes all my included files, their functionality,  and how I
+proceeded to complete this project.

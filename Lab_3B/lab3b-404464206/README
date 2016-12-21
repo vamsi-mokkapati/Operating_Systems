@@ -1,0 +1,48 @@
+Vamsi Mokkapati
+Student ID: 404-464-206
+CS 111, Project 3B
+TA: Zhaoxing Bu
+
+Descriptions of Included Files:
+
+lab3b.py:
+This is the source code in python that reads in all 6 of the CSV files
+generated from project 3A and uses them to check for the different types
+of errors and output them in the correct error report format to
+lab3b_check.txt. This script successfully identifies and reports errors
+relating to unallocated blocks, duplicately allocated blocks, unallocated
+inodes, missing inodes, incorrect link counts, incorrect directory entries,
+and invalid block pointers. 
+
+Makefile:
+This is the file that can successfully build the tarball and execute the
+program with shell commands. The default action is making sure the user
+has execution permissions on lab3b.py, and "make run" will execute the
+program. The makefile also has clean and dist targets to remove generated
+files and create the tarball, respectively.
+
+README:
+This is the file that describes all the included files, contains the
+shell command to execute the program, and includes information about
+testing features and methodology.
+
+_____________________________________________________________________________
+
+Shell Command to Execute Program:
+
+"python lab3b.py"
+_____________________________________________________________________________
+
+Other Information:
+Testing for this script was done by checking if the functions for each of the
+error types added the correct messages to the output file. By comparing the
+output of my script with the given lab3b_check.txt file using the "diff" and
+"sort" commands, I was able to ensure that my script operated as it should.
+The block number information from the inode.csv file was used extensively
+in order to detect unallocated blocks, duplicately allocated blocks, and more.
+Since many global arrays, dictionaries, and variables are filled with information
+at the start from the CSV files, the functions can use these without calling an
+initialization function multiple times; this aspect of my code increases
+efficiency. As far as my testing went, there were no limitations to be found
+when tested with the given 6 CSV files, and all outputs to the error report
+were found to be correct.

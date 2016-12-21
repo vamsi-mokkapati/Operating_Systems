@@ -1,0 +1,307 @@
+Total: 437 samples
+     394  90.2%  90.2%      437 100.0% threadFunc
+      37   8.5%  98.6%       37   8.5% __strcmp_sse42
+       5   1.1%  99.8%       28   6.4% SortedList_insert
+       1   0.2% 100.0%       15   3.4% SortedList_lookup
+       0   0.0% 100.0%      437 100.0% __clone
+       0   0.0% 100.0%      437 100.0% start_thread
+ROUTINE ====================== threadFunc in /u/cs/ugrad/vamsi/proj_2b/lab2_list.c
+   394    437 Total samples (flat / cumulative)
+     .      .   17: int* sub_lists;
+     .      .   18: long long global_mutex_time = 0;
+     .      .   19: long long global_time_array[3000] = { 0 };
+     .      .   20: int thrdCnt = 0;
+     .      .   21: 
+---
+     .      .   22: void *threadFunc(void *arg) {
+     .      .   23:   struct timespec mutex_start_time, mutex_end_time;
+     .      .   24:   long long elapsed_mutex_time_in_ns1 = 0;
+     .      .   25:   long long elapsed_mutex_time_in_ns2 = 0;
+     .      .   26:   long long elapsed_mutex_time_in_ns3 = 0;
+     .      .   27:   long long final_mutex_time = 0;
+     .      .   28:   
+     .      .   29:   for (int i = *(int *) arg; i < thread_num * iter_num; i += thread_num) {
+     .      .   30: 
+     .      .   31:     // Insert into multi-list
+     .      .   32:     switch (sync_flag) {
+     .      .   33:     case 'm':
+     .      .   34:       // Collect mutex start time  
+     .      .   35:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_start_time) < 0) {
+     .      .   36: 	perror("clock_gettime function error!");
+     .      .   37: 	exit(EXIT_FAILURE);
+     .      .   38:       }
+     .      .   39:       if (pthread_mutex_lock(&mutex_array[sub_lists[i]])) {
+     .      .   40:         fprintf(stderr, "pthread_mutex_lock error!\n");
+     .      .   41:         exit(EXIT_FAILURE);
+     .      .   42:       }
+     .      .   43:       // Collect mutex end time
+     .      .   44:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_end_time) < 0) {
+     .      .   45:         perror("clock_gettime function error!");
+     .      .   46:         exit(EXIT_FAILURE);
+     .      .   47:       }
+     .      .   48:       SortedList_insert(&lists_array[sub_lists[i]], &elements_array[i]);
+     .      .   49:       if (pthread_mutex_unlock(&mutex_array[sub_lists[i]])) {
+     .      .   50:         fprintf(stderr, "pthread_mutex_unlock error!\n");
+     .      .   51:         exit(EXIT_FAILURE);
+     .      .   52:       }
+     .      .   53:       elapsed_mutex_time_in_ns1 = ((mutex_end_time.tv_sec - mutex_start_time.tv_sec) * 1000000000) +
+     .      .   54: 	(mutex_end_time.tv_nsec - mutex_start_time.tv_nsec);
+     .      .   55:       break;
+     .      .   56:     case 's':
+   345    345   57:       while(__sync_lock_test_and_set(&sync_locks_array[sub_lists[i]], 1));
+     .     28   58:       SortedList_insert(&lists_array[sub_lists[i]], &elements_array[i]);
+     .      .   59:       __sync_lock_release(&sync_locks_array[sub_lists[i]]);
+     .      .   60:       break;
+     .      .   61:     default:
+     .      .   62:       SortedList_insert(&lists_array[sub_lists[i]], &elements_array[i]);
+     .      .   63:       break;
+     .      .   64:     }
+     .      .   65:   }
+     .      .   66: 
+     .      .   67:   // Get the list length
+     .      .   68:   int list_len = 0;
+     .      .   69:   switch (sync_flag) {
+     .      .   70:   case 'm':
+     .      .   71:     for (int i = 0; i < list_num; i++) {
+     .      .   72:       // Collect mutex start time
+     .      .   73:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_start_time) < 0) {
+     .      .   74:         perror("clock_gettime function error!");
+     .      .   75:         exit(EXIT_FAILURE);
+     .      .   76:       }
+     .      .   77:       if (pthread_mutex_lock(&mutex_array[i])) {
+     .      .   78:         fprintf(stderr, "pthread_mutex_lock error!\n");
+     .      .   79:         exit(EXIT_FAILURE);
+     .      .   80:       }
+     .      .   81:       // Collect mutex end time
+     .      .   82:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_end_time) < 0) {
+     .      .   83:         perror("clock_gettime function error!");
+     .      .   84:         exit(EXIT_FAILURE);
+     .      .   85:       }
+     .      .   86:       list_len += SortedList_length(&lists_array[i]);
+     .      .   87:       if (pthread_mutex_unlock(&mutex_array[i])) {
+     .      .   88:         fprintf(stderr, "pthread_mutex_unlock error!\n");
+     .      .   89:         exit(EXIT_FAILURE);
+     .      .   90:       }
+     .      .   91:       elapsed_mutex_time_in_ns2 = ((mutex_end_time.tv_sec - mutex_start_time.tv_sec) * 1000000000) +
+     .      .   92:         (mutex_end_time.tv_nsec - mutex_start_time.tv_nsec);
+     .      .   93:     }
+     .      .   94:     break;
+     .      .   95:   case 's':
+     .      .   96:     for (int i = 0; i < list_num; i++) {
+     .      .   97:       while(__sync_lock_test_and_set(&sync_locks_array[i], 1));
+     .      .   98:       list_len += SortedList_length(&lists_array[i]);
+     .      .   99:       __sync_lock_release(&sync_locks_array[i]);
+     .      .  100:     }
+     .      .  101:     break;
+     .      .  102:   default:
+     .      .  103:     for (int i = 0; i < list_num; i++) {
+     .      .  104:       list_len += SortedList_length(&lists_array[i]);
+     .      .  105:     }
+     .      .  106:     break;
+     .      .  107:   }
+     .      .  108: 
+     .      .  109:   // Look up and delete each of the inserted keys
+     .      .  110:   SortedListElement_t *lookup_elem;
+     .      .  111:   for (int i = *(int *) arg; i < thread_num * iter_num; i += thread_num) {
+     .      .  112:     switch (sync_flag) {
+     .      .  113:     case 'm':
+     .      .  114:       // Collect mutex start time
+     .      .  115:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_start_time) < 0) {
+     .      .  116:         perror("clock_gettime function error!");
+     .      .  117:         exit(EXIT_FAILURE);
+     .      .  118:       }
+     .      .  119:       if (pthread_mutex_lock(&mutex_array[sub_lists[i]])) {
+     .      .  120:         fprintf(stderr, "pthread_mutex_lock error!\n");
+     .      .  121:         exit(EXIT_FAILURE);
+     .      .  122:       }
+     .      .  123:       // Collect mutex end time
+     .      .  124:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_end_time) < 0) {
+     .      .  125:         perror("clock_gettime function error!");
+     .      .  126:         exit(EXIT_FAILURE);
+     .      .  127:       }
+     .      .  128:       lookup_elem = SortedList_lookup(&lists_array[sub_lists[i]], elements_array[i].key);
+     .      .  129:       SortedList_delete(lookup_elem);
+     .      .  130:       if (pthread_mutex_unlock(&mutex_array[sub_lists[i]])) {
+     .      .  131:         fprintf(stderr, "pthread_mutex_unlock error!\n");
+     .      .  132:         exit(EXIT_FAILURE);
+     .      .  133:       }
+     .      .  134:       elapsed_mutex_time_in_ns3 = ((mutex_end_time.tv_sec - mutex_start_time.tv_sec) * 1000000000) +
+     .      .  135:         (mutex_end_time.tv_nsec - mutex_start_time.tv_nsec);
+     .      .  136:       break;
+     .      .  137:     case 's':
+    49     49  138:       while(__sync_lock_test_and_set(&sync_locks_array[sub_lists[i]], 1));
+     .     15  139:       lookup_elem = SortedList_lookup(&lists_array[sub_lists[i]], elements_array[i].key);
+     .      .  140:       SortedList_delete(lookup_elem);
+     .      .  141:       __sync_lock_release(&sync_locks_array[sub_lists[i]]);
+     .      .  142:       break;
+     .      .  143:     default:
+     .      .  144:       lookup_elem = SortedList_lookup(&lists_array[sub_lists[i]], elements_array[i].key);
+     .      .  145:       SortedList_delete(lookup_elem);
+     .      .  146:       break;
+     .      .  147:     }
+     .      .  148:   }
+     .      .  149:   
+     .      .  150:   if (sync_flag == 'm') {
+     .      .  151:     global_time_array[thrdCnt] = elapsed_mutex_time_in_ns1;
+     .      .  152:     global_time_array[thrdCnt+1] = elapsed_mutex_time_in_ns2;
+     .      .  153:     global_time_array[thrdCnt+2] = elapsed_mutex_time_in_ns3;
+     .      .  154:     thrdCnt += 3;
+     .      .  155:   }
+     .      .  156:   return NULL;
+     .      .  157: }
+---
+     .      .  158: 
+     .      .  159: // Implementation of the sdbm hash function for good key distribution and fewer splits
+     .      .  160: unsigned long long hash(const char *elemKey) {
+     .      .  161:   size_t keySize = strlen(elemKey);
+     .      .  162:   unsigned long long hashAddr = 69;
+ROUTINE ====================== threadFunc in /u/cs/ugrad/vamsi/proj_2b/lab2_list.c
+   394    437 Total samples (flat / cumulative)
+     .      .   17: int* sub_lists;
+     .      .   18: long long global_mutex_time = 0;
+     .      .   19: long long global_time_array[3000] = { 0 };
+     .      .   20: int thrdCnt = 0;
+     .      .   21: 
+---
+     .      .   22: void *threadFunc(void *arg) {
+     .      .   23:   struct timespec mutex_start_time, mutex_end_time;
+     .      .   24:   long long elapsed_mutex_time_in_ns1 = 0;
+     .      .   25:   long long elapsed_mutex_time_in_ns2 = 0;
+     .      .   26:   long long elapsed_mutex_time_in_ns3 = 0;
+     .      .   27:   long long final_mutex_time = 0;
+     .      .   28:   
+     .      .   29:   for (int i = *(int *) arg; i < thread_num * iter_num; i += thread_num) {
+     .      .   30: 
+     .      .   31:     // Insert into multi-list
+     .      .   32:     switch (sync_flag) {
+     .      .   33:     case 'm':
+     .      .   34:       // Collect mutex start time  
+     .      .   35:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_start_time) < 0) {
+     .      .   36: 	perror("clock_gettime function error!");
+     .      .   37: 	exit(EXIT_FAILURE);
+     .      .   38:       }
+     .      .   39:       if (pthread_mutex_lock(&mutex_array[sub_lists[i]])) {
+     .      .   40:         fprintf(stderr, "pthread_mutex_lock error!\n");
+     .      .   41:         exit(EXIT_FAILURE);
+     .      .   42:       }
+     .      .   43:       // Collect mutex end time
+     .      .   44:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_end_time) < 0) {
+     .      .   45:         perror("clock_gettime function error!");
+     .      .   46:         exit(EXIT_FAILURE);
+     .      .   47:       }
+     .      .   48:       SortedList_insert(&lists_array[sub_lists[i]], &elements_array[i]);
+     .      .   49:       if (pthread_mutex_unlock(&mutex_array[sub_lists[i]])) {
+     .      .   50:         fprintf(stderr, "pthread_mutex_unlock error!\n");
+     .      .   51:         exit(EXIT_FAILURE);
+     .      .   52:       }
+     .      .   53:       elapsed_mutex_time_in_ns1 = ((mutex_end_time.tv_sec - mutex_start_time.tv_sec) * 1000000000) +
+     .      .   54: 	(mutex_end_time.tv_nsec - mutex_start_time.tv_nsec);
+     .      .   55:       break;
+     .      .   56:     case 's':
+   345    345   57:       while(__sync_lock_test_and_set(&sync_locks_array[sub_lists[i]], 1));
+     .     28   58:       SortedList_insert(&lists_array[sub_lists[i]], &elements_array[i]);
+     .      .   59:       __sync_lock_release(&sync_locks_array[sub_lists[i]]);
+     .      .   60:       break;
+     .      .   61:     default:
+     .      .   62:       SortedList_insert(&lists_array[sub_lists[i]], &elements_array[i]);
+     .      .   63:       break;
+     .      .   64:     }
+     .      .   65:   }
+     .      .   66: 
+     .      .   67:   // Get the list length
+     .      .   68:   int list_len = 0;
+     .      .   69:   switch (sync_flag) {
+     .      .   70:   case 'm':
+     .      .   71:     for (int i = 0; i < list_num; i++) {
+     .      .   72:       // Collect mutex start time
+     .      .   73:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_start_time) < 0) {
+     .      .   74:         perror("clock_gettime function error!");
+     .      .   75:         exit(EXIT_FAILURE);
+     .      .   76:       }
+     .      .   77:       if (pthread_mutex_lock(&mutex_array[i])) {
+     .      .   78:         fprintf(stderr, "pthread_mutex_lock error!\n");
+     .      .   79:         exit(EXIT_FAILURE);
+     .      .   80:       }
+     .      .   81:       // Collect mutex end time
+     .      .   82:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_end_time) < 0) {
+     .      .   83:         perror("clock_gettime function error!");
+     .      .   84:         exit(EXIT_FAILURE);
+     .      .   85:       }
+     .      .   86:       list_len += SortedList_length(&lists_array[i]);
+     .      .   87:       if (pthread_mutex_unlock(&mutex_array[i])) {
+     .      .   88:         fprintf(stderr, "pthread_mutex_unlock error!\n");
+     .      .   89:         exit(EXIT_FAILURE);
+     .      .   90:       }
+     .      .   91:       elapsed_mutex_time_in_ns2 = ((mutex_end_time.tv_sec - mutex_start_time.tv_sec) * 1000000000) +
+     .      .   92:         (mutex_end_time.tv_nsec - mutex_start_time.tv_nsec);
+     .      .   93:     }
+     .      .   94:     break;
+     .      .   95:   case 's':
+     .      .   96:     for (int i = 0; i < list_num; i++) {
+     .      .   97:       while(__sync_lock_test_and_set(&sync_locks_array[i], 1));
+     .      .   98:       list_len += SortedList_length(&lists_array[i]);
+     .      .   99:       __sync_lock_release(&sync_locks_array[i]);
+     .      .  100:     }
+     .      .  101:     break;
+     .      .  102:   default:
+     .      .  103:     for (int i = 0; i < list_num; i++) {
+     .      .  104:       list_len += SortedList_length(&lists_array[i]);
+     .      .  105:     }
+     .      .  106:     break;
+     .      .  107:   }
+     .      .  108: 
+     .      .  109:   // Look up and delete each of the inserted keys
+     .      .  110:   SortedListElement_t *lookup_elem;
+     .      .  111:   for (int i = *(int *) arg; i < thread_num * iter_num; i += thread_num) {
+     .      .  112:     switch (sync_flag) {
+     .      .  113:     case 'm':
+     .      .  114:       // Collect mutex start time
+     .      .  115:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_start_time) < 0) {
+     .      .  116:         perror("clock_gettime function error!");
+     .      .  117:         exit(EXIT_FAILURE);
+     .      .  118:       }
+     .      .  119:       if (pthread_mutex_lock(&mutex_array[sub_lists[i]])) {
+     .      .  120:         fprintf(stderr, "pthread_mutex_lock error!\n");
+     .      .  121:         exit(EXIT_FAILURE);
+     .      .  122:       }
+     .      .  123:       // Collect mutex end time
+     .      .  124:       if (clock_gettime(CLOCK_MONOTONIC, &mutex_end_time) < 0) {
+     .      .  125:         perror("clock_gettime function error!");
+     .      .  126:         exit(EXIT_FAILURE);
+     .      .  127:       }
+     .      .  128:       lookup_elem = SortedList_lookup(&lists_array[sub_lists[i]], elements_array[i].key);
+     .      .  129:       SortedList_delete(lookup_elem);
+     .      .  130:       if (pthread_mutex_unlock(&mutex_array[sub_lists[i]])) {
+     .      .  131:         fprintf(stderr, "pthread_mutex_unlock error!\n");
+     .      .  132:         exit(EXIT_FAILURE);
+     .      .  133:       }
+     .      .  134:       elapsed_mutex_time_in_ns3 = ((mutex_end_time.tv_sec - mutex_start_time.tv_sec) * 1000000000) +
+     .      .  135:         (mutex_end_time.tv_nsec - mutex_start_time.tv_nsec);
+     .      .  136:       break;
+     .      .  137:     case 's':
+    49     49  138:       while(__sync_lock_test_and_set(&sync_locks_array[sub_lists[i]], 1));
+     .     15  139:       lookup_elem = SortedList_lookup(&lists_array[sub_lists[i]], elements_array[i].key);
+     .      .  140:       SortedList_delete(lookup_elem);
+     .      .  141:       __sync_lock_release(&sync_locks_array[sub_lists[i]]);
+     .      .  142:       break;
+     .      .  143:     default:
+     .      .  144:       lookup_elem = SortedList_lookup(&lists_array[sub_lists[i]], elements_array[i].key);
+     .      .  145:       SortedList_delete(lookup_elem);
+     .      .  146:       break;
+     .      .  147:     }
+     .      .  148:   }
+     .      .  149:   
+     .      .  150:   if (sync_flag == 'm') {
+     .      .  151:     global_time_array[thrdCnt] = elapsed_mutex_time_in_ns1;
+     .      .  152:     global_time_array[thrdCnt+1] = elapsed_mutex_time_in_ns2;
+     .      .  153:     global_time_array[thrdCnt+2] = elapsed_mutex_time_in_ns3;
+     .      .  154:     thrdCnt += 3;
+     .      .  155:   }
+     .      .  156:   return NULL;
+     .      .  157: }
+---
+     .      .  158: 
+     .      .  159: // Implementation of the sdbm hash function for good key distribution and fewer splits
+     .      .  160: unsigned long long hash(const char *elemKey) {
+     .      .  161:   size_t keySize = strlen(elemKey);
+     .      .  162:   unsigned long long hashAddr = 69;

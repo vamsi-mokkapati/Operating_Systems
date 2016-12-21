@@ -1,0 +1,50 @@
+Vamsi Mokkapati
+Student ID: 404-464-206
+CS 111, Project 3A
+TA: Zhaoxing Bu
+
+Descriptions of Included Files:
+
+lab3a.c:
+This is the C source module that summarizes the contents of the provided
+file system image. Using a super_block structure, it stores all the necessary
+information contained in the super block such as the magic number, and total
+number of blocks and inodes. Using the group_block structure, it also stores
+information about each cylinder group such as number of free blocks/inodes
+and number of directories and bitmaps. This module prints out all this info
+to CSV files as specified by their respective file descriptors.
+
+By using some math to find the necessary offsets and using the pread()
+function, I made sure the module can produce the requested information by
+the spec. For the free bitmap entry, my code can find a list of free
+inodes and blocks, and output the block/inode numbers. With the help of
+some EXT2 file system documentation, I was also able to output inode information
+such as the inode's owner, creation time, access time, and number of blocks.
+Similarly, using math for finding offsets and using the online documentaiton on
+EXT2, I was able to write the module so it could output information about
+valid directory entries and non-zero block pointers on indirect blocks.
+
+Makefile:
+This is the file that builds the executable from the C source module, cleans
+up generated CSV files, and builds the final tarball to be submitted. 
+
+README:
+This is the file that describes all the included files, my UID, and other
+information about this submission.
+
+________________________________________________________________________________
+
+The main testing methodology used for this project was to compare my CSV output
+with the provided sample CSV files, and check for correctness using the Unix
+"diff" command. If the files did not match, I looked into which lines were
+different, and went back into my code to find out where my error was. An example
+where this approach was helpful was with my directory.csv file, where I was initially
+outputting the first 400 or so lines correctly, but my code wasn't printing out
+the remaining half of the file. The error in this case was caused due to a variable
+value that wasn't stored properly, and therefore got messed up with iterations of
+a while loop.
+
+As of the completion of my testing, there are no limitations of my submitted code
+when used to get data about the provided file system image. All CSV files outputted
+by my code are identical to the provided sample CSV files, verified by the "diff"
+command.

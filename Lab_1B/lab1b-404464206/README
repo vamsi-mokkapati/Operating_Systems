@@ -1,0 +1,63 @@
+Vamsi Mokkapati
+404-464-206
+CS 111, Project 1B
+TA: Zhaoxing Bu
+
+Description of included files:
+
+server.c:
+
+This is the file that uses pipes in a similar fashion to project 1A to connect
+with the shell, and uses the socket(7) function to connect with the client.
+Using the --port option, running "./server --port=<PORT_NO>" can open a connection
+to the specified port. Using the --encrypt option will enable all text typed from
+the client side to be encrypted using the "blowfish" algorithm, under the Output
+Feedback Mode (OFB). Incoming characters from the client side will be sent to a
+bash shell, which is a child process created by the fork() function. Both the
+port and encryption options work satisfactorily at the time of testing on the
+Linux server running RHEL 7.
+
+my.key:
+
+This is a file that serves as the encryption key upon which the algorithm from
+mcrypt will depend on. This key can contain any array of characters, so I simply
+typed a test sentence.
+
+client.c:
+
+This file will enable a client process to be created; this process will be connected
+to the server via a TCP connection that will allow data to be transferred from the
+client to the socket and vice versa. The code in this file also allows for a port
+option; once the server is running with a specified port number, the client can run
+with the same port number to be connected to the server. The "--encrypt" option is
+available to be used in conjunction with the same option on the server side; this
+enables the non-canonical character-at-a-time input from the client side to be
+encrypted. This resultant encryption can be seen in the log file using the "--log"
+option ("./client --port=<PORT_NO> --log=logFile.txt --encrypt"). When the encrypt
+option is used, all the sent and received bits in the log file will be encrypted, since
+the sent characters will be shown after encryption and the received characters will
+be shown before decryption. With the server code file, client.c has been compiling
+and performing as expected, with all the options working as per the specification.
+
+Makefile:
+
+This file intended to compile server.c to make a "server" executable, compile client.c
+into a "client" executable, and run "make" to compile both the client and server C files.
+It also has a "make clean" option, that removes all files that are not the five files
+included with the submission, and a "make dist" option that compresses all files to be
+submitted into a tarball.
+
+README:
+
+This README file simply describes all the included files, and talks about any information
+regarding this submission.
+
+_________________________________________________________________________________________
+
+After thorough testing, I found no limitations, and the server and client side both work
+with and without encryption. For testing, I simply typed some bash commands after running
+the server and client side, and checked the log file to make sure all sent and received
+data was being shown, with and without encryption.
+
+I used 3 slip days for this project, because I started relatively late (Tuesday), and had
+some trouble getting encryption to work properly.

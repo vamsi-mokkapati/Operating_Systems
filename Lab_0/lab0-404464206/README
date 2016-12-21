@@ -1,0 +1,62 @@
+Vamsi Mokkapati
+404-464-206
+CS 111, Lab 1C
+TA: Zhaoxing Bu
+
+The main sources of information I used to complete this project were the man pages
+for the various POSIX file operations, especially for the getopt and dup functions
+("man 3 getopt") and ("man 2 dup"). The code I used to do option parsing in C is
+inspired from the Linux man page on getopt.
+
+After the testing I did within my Makefile to check the robustness and correctness
+of my code's results, I found there were no errors to my knowledge, and all the
+expected results outlined in the spec were outputted by my code.
+
+____________________________________________________________________________________________
+
+Makefile checks:
+
+First, I made sure that my --input option works with my lab0 executable. I checked
+this for the purpose of testing the switch statement in my code that redirects
+STDIN to the specified input file. I performed this check by running my code on
+an input file with text inside and an empty output file, and using the "cmp" function
+to make sure both files had the same content after the code was run. By checking the
+exit code of my function using "$$?" and making sure it exited correctly (with 0),
+I was able to confirm if it worked, or write the error message to a log if it didn't.
+
+Next, I checked my --output option in a similar way to ensure that my STDOUT redirection
+code worked as expected. By appending any possible error messages to a file log.txt
+within my Makefile, I would test for overall performance of my code by checking if by the
+end of my tests, the log file was empty. If not, I would have my Makefile write out the
+non-empty contents of the error log file (using "cat").
+
+Since it is one of the tests shown in the spec, I then checked the implementation of
+combined --input and --output. My code should make both files equivalent and return 0 if
+successful, and output a message to the log if not.
+
+To make sure my code correctly handles non-existant input and output files by returning 0,
+I put a check where the lab0 executable is run by itself.
+
+For the next couple tests, I decided to handle situations where input files could not be read
+or output files could not be written to. For both the tests, I made a file using the "touch"
+command, and used "chmod" to either remove the read permission (u-r) or the write permission
+(u-w). After testing to make sure my code either returns 1 or 2, depending on the situation,
+I found it handles both kinds of files correctly.
+
+In order to check my fault handler function, which should return a 3, I checked my --segfault
+and --catch functions. This way, I would be sure my code would generate and die from SIGSEGV,
+and catch/report it.
+
+Lastly, I decided to try all 4 options at once, and see if my code caught the segfault and
+returned 3, for the purpose of completeness and making sure multiple options could work
+when used at the same time. My code worked as expected.
+
+____________________________________________________________________________________________
+
+Other included files in my submission include this README file for the purpose of describing
+my solution and process, and two screenshots: one of a segfault and backtrace done in gdb using
+my --segfault option, and one of adding a breakpoint and ensuring that my forced segmentation
+fault resulted in storing a value to a null pointer. I obtained these screenshots and used the
+gdb debugger by using the basic commands "r" for run ("r --segfault"), and "b" for break
+("b 77" to break at line 77). I put a break at line 77 since that's the line of my code that
+led to a segmentation fault.
